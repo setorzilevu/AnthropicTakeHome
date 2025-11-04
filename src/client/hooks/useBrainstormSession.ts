@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrainstormSession, ConversationState, Message, QuestionStage, PromptId } from '@/lib/types';
+import { BrainstormSession, ConversationState, Message, QuestionStage, PromptId } from '../lib/types';
 import { useLocalStorage } from './useLocalStorage';
 
 export const useBrainstormSession = () => {
@@ -38,7 +38,7 @@ export const useBrainstormSession = () => {
 
     // Check if we already have a question for this stage in messages
     const assistantMessageForStage = session.conversation.messages.find(
-      msg => msg.role === 'assistant' && msg.questionStage === session.conversation.currentStage
+      (msg: Message) => msg.role === 'assistant' && msg.questionStage === session.conversation.currentStage
     );
     
     // If we have a message for this stage, use it instead of fetching
@@ -95,13 +95,13 @@ export const useBrainstormSession = () => {
             questionStage: session.conversation.currentStage,
           };
           
-          // Only add if we don't already have this message
-          const hasMessage = session.conversation.messages.some(
-            msg => msg.role === 'assistant' && 
-                   msg.questionStage === session.conversation.currentStage &&
-                   msg.content === question
+          // Make sure to only add the assistant message if it does not already exist for this stage and content
+          const hasMessage = !!session.conversation.messages.find(
+            (msg: Message) =>
+              msg.role === 'assistant' &&
+              msg.questionStage === session.conversation.currentStage &&
+              msg.content.trim() === question.trim()
           );
-          
           if (!hasMessage) {
             const updatedSession: BrainstormSession = {
               ...session,

@@ -14,7 +14,11 @@
     "jsxImportSource": "react",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/client/*"]
+    }
   },
   "include": ["src/client/**/*"],
   "exclude": ["node_modules", "dist"]

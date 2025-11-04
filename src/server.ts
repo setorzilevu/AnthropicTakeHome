@@ -100,7 +100,6 @@ app.post("/api/chat", async (req, res) => {
           issue
         );
 
-        console.log(`[Follow-up] Generating follow-up for stage: ${conversation.currentStage}, issue: ${issue}`);
 
         return res.json({
           nextStage: 'FOLLOWUP',
@@ -264,5 +263,11 @@ app.post("/api/generate-outline", async (req, res) => {
   }
 });
 
+// Express server runs on port 3001 (or PORT from .env)
+// Frontend (Vite) runs on port 3000 and proxies /api requests to this server
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Express API server listening on port ${PORT}`);
+  console.log(`Visit http://localhost:${PORT} to see: "Server is running successfully"`);
+  console.log(`Frontend runs on http://localhost:3000`);
+});

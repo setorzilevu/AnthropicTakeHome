@@ -65,9 +65,10 @@ export default function App() {
         localStorage.setItem('selectedPrompt', promptId);
         setSelectedPrompt(promptId);
         setCurrentPage('brainstorm');
-      } catch (err: any) {
-        console.error('Error selecting prompt:', err);
-        setError(err.message || 'Failed to select prompt');
+      } catch (err) {
+        const error = err as Error;
+        console.error('Error selecting prompt:', error);
+        setError(error.message || 'Failed to select prompt');
       }
     };
 
@@ -125,7 +126,6 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {COMMON_APP_PROMPTS.map((prompt) => {
               if (!prompt || !prompt.id) {
-                console.warn('Invalid prompt:', prompt);
                 return null;
               }
               

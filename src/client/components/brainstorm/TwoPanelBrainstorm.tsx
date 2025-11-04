@@ -68,7 +68,13 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
       
       if (data.sections) {
         // Process sections to add id and canRefine fields
-        const processedSections = (data.sections || []).map((section: any, idx: number) => ({
+        interface SectionData {
+          id?: string;
+          title: string;
+          content: string;
+          canRefine?: boolean;
+        }
+        const processedSections = (data.sections || []).map((section: SectionData, idx: number) => ({
           ...section,
           id: section.id || `section-${idx}`,
           canRefine: section.canRefine !== undefined ? section.canRefine : true,
@@ -141,7 +147,13 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
           const data = await response.json();
           if (data.sections) {
             // Process sections to add id and canRefine fields
-            const processedSections = (data.sections || []).map((section: any, idx: number) => ({
+            interface SectionData {
+              id?: string;
+              title: string;
+              content: string;
+              canRefine?: boolean;
+            }
+            const processedSections = (data.sections || []).map((section: SectionData, idx: number) => ({
               ...section,
               id: section.id || `section-${idx}`,
               canRefine: section.canRefine !== undefined ? section.canRefine : true,
@@ -391,7 +403,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
 };
 
 // Helper to convert stage to question number
-const getQuestionNumber = (stage: string, session?: any): number => {
+const getQuestionNumber = (stage: string, session?: { conversation?: { currentStage?: string; studentResponses?: Record<string, string> } }): number => {
   if (stage === 'FOLLOWUP' && session) {
     const responseStages = Object.keys(session.conversation?.studentResponses || {});
     const nonFollowupStages = responseStages.filter(s => s !== 'FOLLOWUP' && s !== 'COMPLETE');

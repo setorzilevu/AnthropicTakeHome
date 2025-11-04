@@ -1,17 +1,27 @@
-# College Coach - Essay Mastery Application
+# From Ideas to Outline: College Essay Brainstorming Tool
 
-A progressive learning system that teaches students to master college application essays through four skill levels: Clarity, Specificity, Reflection, and Voice.
+A conversational AI tool that guides students through brainstorming their college application essays. Using Claude AI, students select a Common App prompt and answer 7 thoughtful questions, receiving a comprehensive essay outline based on their authentic responses.
 
 ## Features
 
-- **4-Level Progression System**: Students progress through Clarity → Specificity → Reflection → Voice
-- **85% Mastery Threshold**: Must demonstrate 85% mastery (4.25/5) before unlocking the next level
-- **Level-Specific Coaching**: Claude provides tailored guidance for each skill level
-- **Socratic Questioning**: Guided reflection through thoughtful questions
-- **Micro-Challenges**: Small, actionable revision tasks
-- **Admissions Mode**: Evaluate essays against university-specific public values
-- **Progress Tracking**: Visual progress bars and mastery indicators
-- **Session Persistence**: Progress saved to localStorage
+- **Prompt Selection**: Choose from 4 Common App essay prompts
+- **Guided Conversation**: Answer 7 progressive questions designed to uncover your authentic story
+- **Live Outline Generation**: Watch your essay outline develop in real-time as you answer questions
+- **Comprehensive Outline**: Receive a detailed outline with:
+  - High-level structure organized into logical sections
+  - Explanation of why the structure works for your story
+  - Suggestions on how to craft your narrative
+  - Next steps for essay submission and review
+- **Export Options**: Export your outline as text or markdown
+- **Session Persistence**: Your progress is saved automatically
+
+## Tech Stack
+
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Express.js + TypeScript
+- **AI**: Anthropic Claude API
+- **Styling**: Tailwind CSS
+- **State Management**: React Hooks + LocalStorage
 
 ## Setup
 
@@ -23,111 +33,142 @@ A progressive learning system that teaches students to master college applicatio
 
 ### Installation
 
-1. Install dependencies:
+1. Clone the repository:
+```bash
+git clone https://github.com/setorzilevu/AnthropicTakeHome.git
+cd AnthropicTakeHome
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Create a `.env` file in the root directory:
-```
+3. Create a `.env` file in the root directory:
+```env
 ANTHROPIC_API_KEY=your_api_key_here
 PORT=3001
 ```
 
-3. Start the backend server:
+4. Start the backend server:
 ```bash
 npm run dev
 ```
 
-4. In a separate terminal, start the frontend development server:
+5. In a separate terminal, start the frontend development server:
 ```bash
 npm run client
 ```
 
-5. Open your browser to `http://localhost:3000`
+6. Open your browser to `http://localhost:3000`
 
 ## Architecture
 
 ### Backend (`src/server.ts`)
-- Express API server on port 3001
-- Endpoints:
-  - `POST /api/analyze-level` - Analyze essay for a specific skill level
-  - `POST /api/admissions-eval` - Evaluate essay for admissions mode
-  - `GET /api/universities` - Get list of available universities
-  - `POST /api/critique` - Legacy endpoint (backward compatibility)
+
+Express API server on port 3001 with the following endpoints:
+
+- `GET /` - Health check endpoint
+- `POST /api/chat` - Generate questions and process student responses
+  - Generates contextual questions using Claude based on conversation state
+  - Analyzes student responses for depth and specificity
+  - Generates follow-up questions when needed
+  - Manages conversation stage progression (Q1-Q7)
+- `POST /api/generate-outline` - Generate comprehensive essay outline
+  - Creates detailed outline based on entire conversation
+  - Includes sections, explanation, and follow-up prompt
 
 ### Frontend (`src/client/`)
-- React + TypeScript application
-- Vite for build tooling
-- Components:
-  - `App.tsx` - Main application component
-  - `LevelProgress.tsx` - Progress visualization
-  - `EssayEditor.tsx` - Text editor for essays
-  - `FeedbackPanel.tsx` - Display analysis feedback
-  - `AdmissionsMode.tsx` - University evaluation interface
 
-### Level System
+React + TypeScript application with the following structure:
 
-1. **Clarity** (Level 1)
-   - Express ideas simply and coherently
-   - Focus on sentence structure and logical flow
+#### Pages/Flow
+1. **Landing Page** (`ArtifactsGallery`) - Artifacts-style gallery with "From Ideas to Outline" card
+2. **Prompts Page** (`App.tsx`) - Display 4 Common App prompts with "How it Works" modal
+3. **Brainstorm Page** (`TwoPanelBrainstorm`) - Two-panel interface:
+   - Left: Questions and responses (7 questions total)
+   - Right: Live outline generation
+4. **Outline Page** (`App.tsx`) - Two-panel display of final outline:
+   - Left: Outline structure
+   - Right: Explanation and suggestions
 
-2. **Specificity** (Level 2)
-   - Ground claims in vivid, concrete details
-   - Add sensory details and specific examples
+#### Components
 
-3. **Reflection** (Level 3)
-   - Reveal meaning, growth, and insight
-   - Fitzpatrick framework reflection questions
+**Landing:**
+- `ArtifactsGallery.tsx` - Landing page with artifact cards
 
-4. **Voice** (Level 4)
-   - Develop authentic tone and narrative coherence
-   - Find unique personal voice
+**Prompts:**
+- `HowItWorksModal.tsx` - Modal explaining the brainstorming process
 
-5. **Admissions Mode** (Final)
-   - Evaluate against university-specific values
-   - Stanford, Harvard, MIT, Yale, Princeton supported
+**Brainstorm:**
+- `TwoPanelBrainstorm.tsx` - Main brainstorming interface
+- `LoadingState.tsx` - Loading indicator component
 
-## API Examples
+**Outline:**
+- `OutlineSection.tsx` - Individual outline section display
+- `ExportOptions.tsx` - Export outline as text/markdown
+- `RefineModal.tsx` - Refine individual outline sections
 
-### Analyze Essay for a Level
+**UI:**
+- `Button.tsx` - Reusable button component
+- `Card.tsx` - Reusable card component
+- `Modal.tsx` - Reusable modal component
+- `ProgressBar.tsx` - Progress indicator
+- `TextArea.tsx` - Auto-growing textarea component
 
-```bash
-curl -X POST http://localhost:3001/api/analyze-level \
-  -H "Content-Type: application/json" \
-  -d '{
-    "essay": "Your essay text here...",
-    "level": "clarity",
-    "sessionState": {}
-  }'
-```
+#### Hooks
 
-### Admissions Evaluation
+- `useBrainstormSession.ts` - Manages brainstorming session state
+  - Handles conversation state
+  - Fetches questions from API
+  - Submits responses and manages stage progression
+  - Persists to localStorage
+- `useLocalStorage.ts` - Generic localStorage hook
 
-```bash
-curl -X POST http://localhost:3001/api/admissions-eval \
-  -H "Content-Type: application/json" \
-  -d '{
-    "essay": "Your essay text here...",
-    "universityName": "Stanford"
-  }'
-```
+#### Libraries
 
-## Learning Principles
+- `claude.ts` - Claude API client functions
+  - `generateQuestion()` - Generate contextual questions
+  - `analyzeResponse()` - Analyze student responses
+  - `generateFollowUp()` - Generate follow-up questions
+  - `generateOutline()` - Generate comprehensive outline
+- `systemPrompts.ts` - Centralized system prompts for Claude
+- `prompts.ts` - Common App essay prompts data
+- `types.ts` - TypeScript type definitions
+- `utils.ts` - Utility functions (className merging)
 
-- **Scaffolding**: Levels build progressively; prior mastery required
-- **Metacognition**: Reflection prompts after every Claude suggestion
-- **Cognitive Apprenticeship**: Claude models expert reasoning transparently
-- **Transfer of Learning**: Admissions Mode tests skill application
-- **Self-Determination Theory**: Motivation through autonomy, competence, and purpose
+## Question Flow
 
-## Ethical Guardrails
+The tool guides students through 7 progressive questions:
 
-- Claude never writes full paragraphs unprompted
-- All text originates from students
-- Admissions Mode uses publicly available rubric data
-- No predictions of admission outcomes
-- Transparent disclaimer about simulated feedback
+1. **Q1_EXPLORATION** - Initial exploration of potential topics
+2. **Q2_SELECTION** - Narrowing down to a specific topic
+3. **Q3_SPECIFIC_MOMENT** - Identifying a specific moment or experience
+4. **Q4_DILEMMA** - Exploring internal conflict or dilemma
+5. **Q5_ACTION** - What actions were taken
+6. **Q6_DISCOVERY** - What was discovered or learned
+7. **Q7_FUTURE** - How this experience influences the future
+
+Optional follow-up questions may be generated if responses need more depth.
+
+## Outline Generation
+
+After completing all questions, the tool generates a comprehensive outline including:
+
+- **Sections**: 8 detailed sections (Opening Hook, Background Context, Core Experience, etc.)
+- **Explanation**: Why the structure works for the student's specific story
+- **Suggestions**: Guidance on crafting the narrative and the impact it will create
+- **Follow-up Prompt**: Invitation to submit the essay for review once written
+
+The outline emphasizes that it's a **skeleton outline** and the student is responsible for writing the actual essay.
+
+## Design Principles
+
+- **Claude UI Design**: Mimics Claude's clean, minimalist interface
+- **Progressive Disclosure**: Outline builds progressively as questions are answered
+- **Authentic Voice**: Preserves student's natural language and authentic responses
+- **Student Agency**: Students write their own essay; the tool only provides structure
+- **Non-Blocking UI**: API calls are non-blocking for responsive user experience
 
 ## Development
 
@@ -143,7 +184,73 @@ npm run build
 npm run preview
 ```
 
+### Project Structure
+
+```
+src/
+├── client/              # React frontend
+│   ├── components/     # React components
+│   ├── hooks/          # Custom React hooks
+│   ├── lib/            # Client-side libraries
+│   └── main.tsx        # Frontend entry point
+└── server.ts           # Express backend server
+```
+
+## API Examples
+
+### Generate Question
+
+```bash
+curl -X POST http://localhost:3001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation": {
+      "promptId": "challenge",
+      "currentStage": "Q1_EXPLORATION",
+      "messages": [],
+      "studentResponses": {}
+    }
+  }'
+```
+
+### Submit Response
+
+```bash
+curl -X POST http://localhost:3001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation": {
+      "promptId": "challenge",
+      "currentStage": "Q1_EXPLORATION",
+      "messages": [],
+      "studentResponses": {}
+    },
+    "userResponse": "I faced a challenge when I lost my job during the pandemic..."
+  }'
+```
+
+### Generate Outline
+
+```bash
+curl -X POST http://localhost:3001/api/generate-outline \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation": {
+      "promptId": "challenge",
+      "currentStage": "COMPLETE",
+      "messages": [...],
+      "studentResponses": {...}
+    }
+  }'
+```
+
+## Ethical Considerations
+
+- **Student Agency**: The tool provides structure and guidance; students write their own essays
+- **Transparency**: Clear messaging that the outline is a skeleton, not the essay itself
+- **Authentic Voice**: Preserves student's natural language and doesn't over-polish responses
+- **No Plagiarism**: All content originates from student responses
+
 ## License
 
 ISC
-
