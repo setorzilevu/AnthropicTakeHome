@@ -53,7 +53,7 @@ export const RefineModal = ({
     >
       <TextArea
         value={refinedContent}
-        onChange={(e) => setRefinedContent(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRefinedContent(e.target.value)}
         autoGrow
         rows={10}
       />

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LoadingState } from './LoadingState';
 import { useBrainstormSession } from '@/hooks/useBrainstormSession';
-import { Outline } from '@/lib/types';
+import { Outline, Message, OutlineSection as OutlineSectionType } from '@/lib/types';
 
 interface TwoPanelBrainstormProps {
   onComplete: (outline: Outline) => void;
@@ -93,7 +93,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
           setOutlineProgress('');
         }, 2000);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error generating partial outline:', error);
       setOutlineProgress('Thinking about your story...');
     } finally {
@@ -109,7 +109,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
       // Only generate outline if the last message was from the user
       if (lastMessage.role === 'user') {
         // Count user responses to only generate outline after Q2, Q4, Q6 (every 2 questions)
-        const userResponses = session.conversation.messages.filter(m => m.role === 'user').length;
+        const userResponses = session.conversation.messages.filter((m: Message) => m.role === 'user').length;
         const shouldGenerateOutline = userResponses > 0 && (userResponses % 2 === 0 || userResponses >= 6);
         
         if (shouldGenerateOutline) {
@@ -173,7 +173,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
           onComplete(finalOutline);
         }, 500);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error generating final outline:', error);
       setOutlineProgress('Error generating outline. Please try again.');
     } finally {
@@ -199,7 +199,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
     setOutlineProgress('Processing your response...');
     
     // Submit response (non-blocking for UI)
-    submitResponse(userResponse).then((success) => {
+    submitResponse(userResponse).then((success: boolean) => {
       if (success) {
         if (isLastQuestion) {
           // Will be handled by useEffect watching for COMPLETE stage
@@ -208,7 +208,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
           }, 500);
         }
       }
-    }).catch((error) => {
+    }).catch((error: unknown) => {
       console.error('Error submitting response:', error);
       setError('Failed to submit response. Please try again.');
     });
@@ -283,7 +283,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
             <TextArea
               label="Your response:"
               value={response}
-              onChange={(e) => setResponse(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setResponse(e.target.value)}
               placeholder="This could be academic, personal, social, or related to a passion..."
               helperText="2-4 sentences is plenty. Be honest."
               error={error}
@@ -352,7 +352,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
             {/* Partial outline sections */}
             {partialOutline && partialOutline.sections.length > 0 && (
               <div className="space-y-3">
-                {partialOutline.sections.map((section, idx) => (
+                {partialOutline.sections.map((section: OutlineSectionType, idx: number) => (
                   <div key={section.id || idx} className="bg-white border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start gap-2 mb-2">
                       <h4 className="text-sm font-semibold text-[#1A1A1A]">{section.title}</h4>
