@@ -39,10 +39,11 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
 
   // Check if we should complete after state updates
   useEffect(() => {
-    if (session?.conversation.currentStage === 'COMPLETE') {
+    if (session?.conversation.currentStage === 'COMPLETE' && !isGeneratingOutline) {
+      // Always generate final outline when COMPLETE, but prevent duplicate calls
       generateFinalOutline();
     }
-  }, [session?.conversation.currentStage]);
+  }, [session?.conversation.currentStage, isGeneratingOutline, generateFinalOutline]);
 
   const generatePartialOutline = useCallback(async () => {
     if (!session || isGeneratingOutline) return;
@@ -51,8 +52,11 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
     setOutlineProgress('Analyzing your responses and updating outline...');
     
     try {
-      // Make API call non-blocking - don't wait for it to complete before showing UI
-      const responsePromise = fetch('/api/generate-outline', {
+      // Show optimistic update immediately
+      setOutlineProgress('Processing your responses...');
+
+      // Make API call - but don't block UI
+      const response = await fetch('/api/generate-outline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,13 +64,13 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
         }),
       });
 
-      // Show optimistic update immediately
-      setOutlineProgress('Processing your responses...');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      const response = await responsePromise;
       const data = await response.json();
       
-      if (data.sections) {
+      if (data.sections && data.sections.length > 0) {
         // Process sections to add id and canRefine fields
         interface SectionData {
           id?: string;
@@ -91,20 +95,24 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
         // Clear progress message after a delay
         setTimeout(() => {
           setOutlineProgress('');
-        }, 2000);
+        }, 1500);
       }
     } catch (error: unknown) {
       console.error('Error generating partial outline:', error);
-      setOutlineProgress('Thinking about your story...');
+      setOutlineProgress('I am working on creating your outline. I\'ll update this screen periodically after every few questions as you provide more details.');
     } finally {
       setIsGeneratingOutline(false);
     }
   }, [session, isGeneratingOutline]);
 
   // Generate outline progressively - only after every 2 questions to reduce API calls
-  // Skip on initial load (when messages.length is 0 or 1)
+  // Skip on initial load (when messages.length is 0 or 1) and don't generate if COMPLETE
   useEffect(() => {
-    if (session && session.conversation.messages.length > 1) {
+    if (!session || session.conversation.currentStage === 'COMPLETE') {
+      return;
+    }
+
+    if (session.conversation.messages.length > 1) {
       const lastMessage = session.conversation.messages[session.conversation.messages.length - 1];
       // Only generate outline if the last message was from the user
       if (lastMessage.role === 'user') {
@@ -113,10 +121,10 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
         const shouldGenerateOutline = userResponses > 0 && (userResponses % 2 === 0 || userResponses >= 6);
         
         if (shouldGenerateOutline) {
-          // Debounce with longer delay to avoid blocking
+          // Debounce with shorter delay for better responsiveness
           const timer = setTimeout(() => {
             generatePartialOutline();
-          }, 1000); // Increased debounce time
+          }, 500); // Reduced debounce time
           return () => clearTimeout(timer);
         } else {
           // Show optimistic update for early questions
@@ -124,9 +132,12 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
         }
       }
     }
-  }, [session?.conversation.messages.length, session, generatePartialOutline]);
+  }, [session?.conversation.messages.length, session?.conversation.currentStage, session, generatePartialOutline]);
 
   const generateFinalOutline = async () => {
+    // Prevent duplicate calls
+    if (isGeneratingOutline) return;
+    
     setIsGeneratingOutline(true);
     setOutlineProgress('Generating your final outline...');
     
@@ -144,38 +155,46 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
         }),
       });
 
-          const data = await response.json();
-          if (data.sections) {
-            // Process sections to add id and canRefine fields
-            interface SectionData {
-              id?: string;
-              title: string;
-              content: string;
-              canRefine?: boolean;
-            }
-            const processedSections = (data.sections || []).map((section: SectionData, idx: number) => ({
-              ...section,
-              id: section.id || `section-${idx}`,
-              canRefine: section.canRefine !== undefined ? section.canRefine : true,
-            }));
-            const finalOutline: Outline = {
-              sections: processedSections,
-              explanation: data.explanation || '',
-              followUpPrompt: data.followUpPrompt || '',
-              generatedAt: new Date(),
-              promptId: session.conversation.promptId,
-            };
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.sections && data.sections.length > 0) {
+        // Process sections to add id and canRefine fields
+        interface SectionData {
+          id?: string;
+          title: string;
+          content: string;
+          canRefine?: boolean;
+        }
+        const processedSections = (data.sections || []).map((section: SectionData, idx: number) => ({
+          ...section,
+          id: section.id || `section-${idx}`,
+          canRefine: section.canRefine !== undefined ? section.canRefine : true,
+        }));
+        const finalOutline: Outline = {
+          sections: processedSections,
+          explanation: data.explanation || '',
+          followUpPrompt: data.followUpPrompt || '',
+          generatedAt: new Date(),
+          promptId: session.conversation.promptId,
+        };
         setPartialOutline(finalOutline);
         setOutlineProgress('Outline complete!');
         
-        // Small delay before calling onComplete
-        setTimeout(() => {
-          onComplete(finalOutline);
-        }, 500);
+        // Call onComplete immediately - no delay needed
+        onComplete(finalOutline);
+      } else {
+        throw new Error('No sections received from API');
       }
     } catch (error: unknown) {
       console.error('Error generating final outline:', error);
       setOutlineProgress('Error generating outline. Please try again.');
+      // Still try to navigate if we have a partial outline
+      if (partialOutline && partialOutline.sections.length > 0) {
+        onComplete(partialOutline);
+      }
     } finally {
       setIsGeneratingOutline(false);
     }
@@ -200,13 +219,9 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
     
     // Submit response (non-blocking for UI)
     submitResponse(userResponse).then((success: boolean) => {
-      if (success) {
-        if (isLastQuestion) {
-          // Will be handled by useEffect watching for COMPLETE stage
-          setTimeout(() => {
-            generateFinalOutline();
-          }, 500);
-        }
+      if (success && isLastQuestion) {
+        // The useEffect watching for COMPLETE stage will handle final outline generation
+        // No need to call it here to avoid duplicate calls
       }
     }).catch((error: unknown) => {
       console.error('Error submitting response:', error);
