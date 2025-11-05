@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArtifactsGallery } from './components/landing/ArtifactsGallery';
 import { HowItWorksModal } from './components/prompts/HowItWorksModal';
 import { TwoPanelBrainstorm } from './components/brainstorm/TwoPanelBrainstorm';
@@ -18,6 +18,12 @@ export default function App() {
   const [refiningSectionId, setRefiningSectionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  // Stable callback for outline completion
+  const handleComplete = useCallback((completedOutline: Outline) => {
+    setOutline(completedOutline);
+    setCurrentPage('outline');
+  }, []);
 
   // Show "How it works" modal when prompts page loads
   useEffect(() => {
@@ -187,11 +193,6 @@ export default function App() {
 
   // Brainstorm page
   if (currentPage === 'brainstorm') {
-    const handleComplete = (completedOutline: Outline) => {
-      setOutline(completedOutline);
-      setCurrentPage('outline');
-    };
-
     return (
       <TwoPanelBrainstorm onComplete={handleComplete} />
     );
