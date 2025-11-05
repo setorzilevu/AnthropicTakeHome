@@ -134,17 +134,12 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
     }
   }, [session?.conversation.messages.length, session?.conversation.currentStage, session, generatePartialOutline]);
 
-  const generateFinalOutline = async () => {
+  const generateFinalOutline = useCallback(async () => {
     // Prevent duplicate calls
-    if (isGeneratingOutline) return;
+    if (isGeneratingOutline || !session) return;
     
     setIsGeneratingOutline(true);
     setOutlineProgress('Generating your final outline...');
-    
-    if (!session) {
-      setIsGeneratingOutline(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/generate-outline', {
@@ -198,7 +193,7 @@ export const TwoPanelBrainstorm = ({ onComplete }: TwoPanelBrainstormProps) => {
     } finally {
       setIsGeneratingOutline(false);
     }
-  };
+  }, [session, isGeneratingOutline, partialOutline, onComplete]);
 
   const handleNext = async () => {
     if (!response.trim()) {
